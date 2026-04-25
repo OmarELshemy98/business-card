@@ -1,0 +1,53 @@
+{
+  "name": "business-cards",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=18.0.0",
+    "yarn": ">=1.22.0"
+  },
+  "scripts": {
+    "dev": "yarn next dev",
+    "build": "yarn next build",
+    "start": "yarn next start",
+    "lint": "yarn next lint",
+    "install-deps": "yarn install",
+    "clean": "yarn cache clean",
+    "type-check": "yarn tsc --noEmit"
+  },
+  "dependencies": {
+    "@emotion/cache": "11.13.1",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@hookform/resolvers": "^5.2.2",
+    "@mui/icons-material": "^5",
+    "@mui/material": "^5",
+    "@mui/material-nextjs": "7.3.2",
+    "@mui/system": "7.3.2",
+    "@mui/x-data-grid": "^6",
+    "@types/json5": "^2.2.0",
+    "firebase": "12.2.1",
+    "firebase-admin": "^13.5.0",
+    "next": "15.5.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-hook-form": "^7.62.0",
+    "react-hot-toast": "^2.6.0",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "3.1.0",
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/node": "20.16.11",
+    "@types/react": "19.0.7",
+    "@types/react-dom": "19.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "eslint": "^9.35.0",
+    "eslint-config-next": "15.5.2",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.13",
+    "typescript": "5.6.2"
+  }
+}
