@@ -16,11 +16,14 @@ import ProfileForm, { ProfileFormValues } from './ProfileForm';
 import { createProfile, updateProfile, uploadImage } from '../../lib/services/profilesService';
 import { useAuth } from '../../hooks/useAuth';
 
-const companyOptions = [
-  { value: 'medyour', label: 'medyour' },
-  { value: 'axiom', label: 'axiom' },
-  { value: 'arcon', label: 'arcon' },
-  { value: 'customTemplate', label: 'custom Template' },
+type SavedTemplate = {
+  name: string;
+  background_color: string;
+  text_color: string;
+};
+
+const baseOptions = [
+  { value: 'customTemplate', label: 'Custom Template' },
 ] as const;
 
 export default function ProfileModal({ open, handleClose, profile, mode, onDataChanged }: {
@@ -34,11 +37,32 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
   const isEdit = mode === 'edit';
   const isView = mode === 'view';
   const { user } = useAuth();
+  
   const [snackbar, setSnackbar] = useState<{ open: boolean; msg: string; sev: 'success' | 'error' }>({
     open: false, msg: '', sev: 'success'
   });
+  const [savedTemplates, setSavedTemplates] = useState<SavedTemplate[]>([]);
+  
   const showSnack = (msg: string, sev: 'success' | 'error' = 'success') =>
-    setSnackbar({ open: true, msg, sev });
+    setSnackbar(s => ({ ...s, open: true, msg, sev }));
+
+  // Load templates from localStorage
+  useEffect(() => {
+    if (open && user?.id) {
+      const saved = localStorage.getItem(`savedTemplates_${user.id}`);
+      if (saved) {
+        setSavedTemplates(JSON.parse(saved));
+      }
+    }
+  }, [open, user?.id]);
+
+  // Company options including saved templates
+  const companyOptions = useMemo(() => {
+    return [
+      ...baseOptions,
+      ...savedTemplates.map(t => ({ value: `template_${t.name}`, label: t.name })),
+    ];
+  }, [savedTemplates]);
 
   // Zod Schema
   const schema = useMemo(() => {
@@ -46,10 +70,10 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       id: z.string().optional(),
       name: z.string().min(1, 'Name is required'),
       title: z.string().optional().or(z.literal('')),
-      companyName: z.string().optional().or(z.literal('')),
+      company_name: z.string().optional().or(z.literal('')),
       phone1: z.string().optional().or(z.literal('')),
       phone2: z.string().optional().or(z.literal('')),
-      customerId: z.string().min(1, 'Template is required'),
+      customer_id: z.string().min(1, 'Template is required'),
       email: z.string().email('Invalid email').optional().or(z.literal('')),
       website: z.string().url('Invalid URL').optional().or(z.literal('')),
       linkedin: z.string().url('Invalid URL').optional().or(z.literal('')),
@@ -58,12 +82,11 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       instagram: z.string().url('Invalid URL').optional().or(z.literal('')),
       youtube: z.string().url('Invalid URL').optional().or(z.literal('')),
       tiktok: z.string().url('Invalid URL').optional().or(z.literal('')),
-      description: z.string().optional().or(z.literal('')),
-      profileImage: z.string().optional().or(z.literal('')),
-      coverImage: z.string().optional().or(z.literal('')),
-      backgroundColor: z.string().optional().or(z.literal('')),
-      textColor: z.string().optional().or(z.literal('')),
-      slug: z.string().optional().or(z.literal('')),
+      description: z.string().max(500, 'Description too long').optional().or(z.literal('')),
+      profile_image: z.string().optional().or(z.literal('')),
+      cover_image: z.string().optional().or(z.literal('')),
+      background_color: z.string().optional().or(z.literal('')),
+      text_color: z.string().optional().or(z.literal('')),
     });
   }, []);
 
@@ -74,10 +97,10 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       id: (profile as any)?.id ?? '',
       name: profile?.name ?? '',
       title: profile?.title ?? '',
-      companyName: profile?.companyName ?? '',
+      company_name: profile?.company_name ?? '',
       phone1: profile?.phone1 ?? '',
       phone2: profile?.phone2 ?? '',
-      customerId: profile?.customerId ?? '',
+      customer_id: profile?.customer_id ?? 'customTemplate',
       email: profile?.email ?? '',
       website: profile?.website ?? '',
       linkedin: profile?.linkedin ?? '',
@@ -87,11 +110,10 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       youtube: profile?.youtube ?? '',
       tiktok: profile?.tiktok ?? '',
       description: profile?.description ?? '',
-      profileImage: profile?.profileImage ?? '',
-      coverImage: profile?.coverImage ?? '',
-      backgroundColor: profile?.backgroundColor ?? '#0f172a',
-      textColor: profile?.textColor ?? '#ffffff',
-      slug: profile?.slug ?? '',
+      profile_image: profile?.profile_image ?? '',
+      cover_image: profile?.cover_image ?? '',
+      background_color: profile?.background_color ?? '#0f172a',
+      text_color: profile?.text_color ?? '#ffffff',
     },
   });
 
@@ -100,10 +122,10 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       id: (profile as any)?.id ?? '',
       name: profile?.name ?? '',
       title: profile?.title ?? '',
-      companyName: profile?.companyName ?? '',
+      company_name: profile?.company_name ?? '',
       phone1: profile?.phone1 ?? '',
       phone2: profile?.phone2 ?? '',
-      customerId: profile?.customerId ?? '',
+      customer_id: profile?.customer_id ?? 'customTemplate',
       email: profile?.email ?? '',
       website: profile?.website ?? '',
       linkedin: profile?.linkedin ?? '',
@@ -113,15 +135,14 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       youtube: profile?.youtube ?? '',
       tiktok: profile?.tiktok ?? '',
       description: profile?.description ?? '',
-      profileImage: profile?.profileImage ?? '',
-      coverImage: profile?.coverImage ?? '',
-      backgroundColor: profile?.backgroundColor ?? '#0f172a',
-      textColor: profile?.textColor ?? '#ffffff',
-      slug: profile?.slug ?? '',
+      profile_image: profile?.profile_image ?? '',
+      cover_image: profile?.cover_image ?? '',
+      background_color: profile?.background_color ?? '#0f172a',
+      text_color: profile?.text_color ?? '#ffffff',
     });
   }, [profile, methods]);
 
-  const handleImageUpload = async (file: File, field: 'profileImage' | 'coverImage') => {
+  const handleImageUpload = async (file: File, field: 'profile_image' | 'cover_image') => {
     try {
       const url = await uploadImage(file);
       methods.setValue(field, url);
@@ -132,13 +153,50 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
     }
   };
 
+  const handleSaveTemplate = (name: string) => {
+    const bgColor = methods.watch('background_color') || '#0f172a';
+    const txtColor = methods.watch('text_color') || '#ffffff';
+    
+    const newTemplate: SavedTemplate = {
+      name,
+      background_color: bgColor,
+      text_color: txtColor,
+    };
+    
+    const updatedTemplates = [...savedTemplates, newTemplate];
+    setSavedTemplates(updatedTemplates);
+    
+    if (user?.id) {
+      localStorage.setItem(`savedTemplates_${user.id}`, JSON.stringify(updatedTemplates));
+    }
+    
+    showSnack(`Template "${name}" saved!`, 'success');
+  };
+
+  const handleLoadTemplate = (template: SavedTemplate) => {
+    methods.setValue('background_color', template.background_color);
+    methods.setValue('text_color', template.text_color);
+    methods.setValue('customer_id', `template_${template.name}`);
+  };
+
+  const handleDeleteTemplate = (index: number) => {
+    const updatedTemplates = savedTemplates.filter((_, i) => i !== index);
+    setSavedTemplates(updatedTemplates);
+    
+    if (user?.id) {
+      localStorage.setItem(`savedTemplates_${user.id}`, JSON.stringify(updatedTemplates));
+    }
+    
+    showSnack('Template deleted!', 'success');
+  };
+
   const onSubmit = async (values: ProfileFormValues) => {
     try {
       if (isAdd) {
         if (!user?.id) throw new Error('User not logged in');
         await createProfile({
           ...values,
-          ownerId: user.id,
+          owner_id: user.id,
         });
         showSnack('Profile added successfully!', 'success');
       } else if (isEdit) {
@@ -166,8 +224,8 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
 
   // Live preview values
   const previewData = methods.watch();
-  const bgColor = previewData.backgroundColor || '#0f172a';
-  const textColor = previewData.textColor || '#ffffff';
+  const bgColor = previewData.background_color || '#0f172a';
+  const textColor = previewData.text_color || '#ffffff';
 
   return (
     <Dialog
@@ -193,7 +251,15 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
           {/* Form */}
           <Box sx={{ flex: 1 }}>
             <FormProvider {...methods}>
-              <ProfileForm mode={mode} companyOptions={companyOptions} onImageUpload={handleImageUpload} />
+              <ProfileForm
+                mode={mode}
+                companyOptions={companyOptions}
+                onImageUpload={handleImageUpload}
+                onSaveTemplate={handleSaveTemplate}
+                savedTemplates={savedTemplates}
+                onLoadTemplate={handleLoadTemplate}
+                onDeleteTemplate={handleDeleteTemplate}
+              />
             </FormProvider>
           </Box>
 
@@ -216,16 +282,16 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
                 color: textColor,
               }}
             >
-              {previewData.coverImage && (
+              {previewData.cover_image && (
                 <Box sx={{ width: '100%', maxWidth: 300, height: 100, borderRadius: 1, mb: -4, overflow: 'hidden' }}>
-                  <img src={previewData.coverImage} alt="Preview Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={previewData.cover_image} alt="Preview Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </Box>
               )}
               
-              <Box sx={{ textAlign: 'center', mt: previewData.coverImage ? 2 : 0 }}>
-                {previewData.profileImage ? (
+              <Box sx={{ textAlign: 'center', mt: previewData.cover_image ? 2 : 0 }}>
+                {previewData.profile_image ? (
                   <Avatar
-                    src={previewData.profileImage}
+                    src={previewData.profile_image}
                     sx={{ width: 80, height: 80, mx: 'auto', mb: 1, border: `4px solid ${bgColor}` }}
                   />
                 ) : (
@@ -243,7 +309,7 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
                   {previewData.title || 'Job Title'}
                 </Typography>
                 <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                  {previewData.companyName || 'Company Name'}
+                  {previewData.company_name || 'Company Name'}
                 </Typography>
 
                 {previewData.description && (

@@ -1,10 +1,10 @@
 export interface Profile {
   id: string;
-  ownerId: string;
-  customerId?: string;
+  owner_id: string;
+  customer_id?: string;
   name?: string;
   title?: string;
-  companyName?: string;
+  company_name?: string;
   phone1?: string;
   phone2?: string;
   email?: string;
@@ -16,10 +16,9 @@ export interface Profile {
   tiktok?: string;
   website?: string;
   description?: string;
-  profileImage?: string;
-  coverImage?: string;
-  backgroundColor?: string;
-  textColor?: string;
-  slug?: string;
-  createdAt?: string;
+  profile_image?: string;
+  cover_image?: string;
+  background_color?: string;
+  text_color?: string;
+  created_at?: string;
 }

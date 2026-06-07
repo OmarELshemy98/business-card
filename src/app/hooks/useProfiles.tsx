@@ -4,7 +4,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { GridSortModel, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { GridActionsCellItem } from '@mui/x-data-grid';
-import { useRouter } from 'next/navigation';
 
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -16,8 +15,6 @@ import { useAuth } from './useAuth';
 import { fetchProfilesForUser, deleteProfileFromDB } from '../lib/services/profilesService';
 
 export function useProfiles() {
-  const router = useRouter();
-  
   // --- auth ---
   const { user } = useAuth();
 
@@ -36,7 +33,7 @@ export function useProfiles() {
   const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
 
   // --- default sort model ---
-  const sortModel: GridSortModel = useMemo(() => [{ field: 'customerId', sort: 'asc' }], []);
+  const sortModel: GridSortModel = useMemo(() => [{ field: 'customer_id', sort: 'asc' }], []);
 
   // --- integration calls ---
   const fetchProfiles = async () => {
@@ -120,8 +117,8 @@ export function useProfiles() {
       return (
         (p.name || '').toLowerCase().includes(q) ||
         (p.title || '').toLowerCase().includes(q) ||
-        (p.customerId || '').toLowerCase().includes(q) ||
-        (p.companyName || '').toLowerCase().includes(q)
+        (p.customer_id || '').toLowerCase().includes(q) ||
+        (p.company_name || '').toLowerCase().includes(q)
       );
     });
   }, [profiles, searchTerm]);
@@ -153,8 +150,8 @@ export function useProfiles() {
         hideable: true,
       },
       {
-        field: 'customerId',
-        headerName: 'Company',
+        field: 'customer_id',
+        headerName: 'Template',
         minWidth: 120,
         flex: 1,
         align: 'center',
@@ -163,7 +160,7 @@ export function useProfiles() {
       },
       {
         field: 'id',
-        headerName: 'id',
+        headerName: 'ID',
         minWidth: 120,
         flex: 1,
         align: 'center',

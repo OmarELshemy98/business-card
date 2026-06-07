@@ -41,8 +41,9 @@ export default function UsersPage() {
       headerName: 'Created',
       flex: 0.8,
       minWidth: 130,
-      valueGetter: (params) => {
-        const v = params.row.created_at;
+      valueGetter: (params: any) => {
+        const row = params.row as AppUser;
+        const v = row.created_at;
         if (!v) return '';
         const date = new Date(v);
         return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;

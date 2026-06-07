@@ -37,8 +37,8 @@ export default function CardClient({ profile }: CardClientProps) {
   if (!profile) return <div className="p-8"><Typography>Card not found</Typography></div>;
 
   const cardUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const bgColor = profile.backgroundColor || '#0f172a';
-  const textColor = profile.textColor || '#ffffff';
+  const bgColor = profile.background_color || '#0f172a';
+  const textColor = profile.text_color || '#ffffff';
 
   const generateVCard = () => {
     const vCardContent = [
@@ -47,7 +47,7 @@ export default function CardClient({ profile }: CardClientProps) {
       `N:;${profile.name};;;`,
       `FN:${profile.name}`,
       profile.title && `TITLE:${profile.title}`,
-      profile.companyName && `ORG:${profile.companyName}`,
+      profile.company_name && `ORG:${profile.company_name}`,
       profile.phone1 && `TEL;TYPE=CELL:${profile.phone1}`,
       profile.phone2 && `TEL;TYPE=WORK:${profile.phone2}`,
       profile.email && `EMAIL:${profile.email}`,
@@ -103,7 +103,7 @@ export default function CardClient({ profile }: CardClientProps) {
         px: 2
       }}
     >
-      {profile.coverImage && (
+      {profile.cover_image && (
         <Box 
           sx={{ 
             width: '100%', 
@@ -115,17 +115,17 @@ export default function CardClient({ profile }: CardClientProps) {
           }}
         >
           <img 
-            src={profile.coverImage} 
+            src={profile.cover_image} 
             alt="Cover" 
             style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
           />
         </Box>
       )}
       
-      <Box sx={{ textAlign: 'center', mt: profile.coverImage ? 4 : 0, maxWidth: 400, width: '100%' }}>
-        {profile.profileImage ? (
+      <Box sx={{ textAlign: 'center', mt: profile.cover_image ? 4 : 0, maxWidth: 400, width: '100%' }}>
+        {profile.profile_image ? (
           <Avatar 
-            src={profile.profileImage} 
+            src={profile.profile_image} 
             sx={{ width: 120, height: 120, mx: 'auto', mb: 2, border: `4px solid ${bgColor}` }} 
           />
         ) : (
@@ -138,7 +138,7 @@ export default function CardClient({ profile }: CardClientProps) {
         
         <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>{profile.name}</Typography>
         <Typography variant="h6" sx={{ mb: 1 }}>{profile.title}</Typography>
-        <Typography variant="subtitle1" sx={{ mb: 3 }}>{profile.companyName}</Typography>
+        <Typography variant="subtitle1" sx={{ mb: 3 }}>{profile.company_name}</Typography>
         
         {profile.description && (
           <Typography variant="body1" sx={{ mb: 3 }}>

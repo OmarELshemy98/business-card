@@ -1,11 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Box, Divider, Typography, TextField, MenuItem, Button, Grid
+  Box, Divider, Typography, TextField, MenuItem, Button, InputAdornment, IconButton
 } from '@mui/material';
 import { Controller, useFormContext } from 'react-hook-form';
 import ImageIcon from '@mui/icons-material/Image';
+import SaveIcon from '@mui/icons-material/Save';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 type Mode = 'add' | 'edit' | 'view';
 
@@ -13,8 +15,8 @@ export type ProfileFormValues = {
   id?: string;
   name: string;
   title?: string;
-  customerId: string;
-  companyName?: string;
+  customer_id: string;
+  company_name?: string;
   phone1?: string;
   phone2?: string;
   email?: string;
@@ -26,33 +28,52 @@ export type ProfileFormValues = {
   youtube?: string;
   tiktok?: string;
   description?: string;
-  profileImage?: string;
-  coverImage?: string;
-  backgroundColor?: string;
-  textColor?: string;
-  slug?: string;
+  profile_image?: string;
+  cover_image?: string;
+  background_color?: string;
+  text_color?: string;
 };
 
 type Option = { value: string; label: string };
 
+type SavedTemplate = {
+  name: string;
+  background_color: string;
+  text_color: string;
+};
+
 type Props = {
   mode: Mode;
   companyOptions: Readonly<Option[]>;
-  onImageUpload: (file: File, field: 'profileImage' | 'coverImage') => Promise<void>;
+  onImageUpload: (file: File, field: 'profile_image' | 'cover_image') => Promise<void>;
+  onSaveTemplate?: (name: string) => void;
+  savedTemplates?: SavedTemplate[];
+  onLoadTemplate?: (template: SavedTemplate) => void;
+  onDeleteTemplate?: (index: number) => void;
 };
 
-// Predefined themes
+// Luxury Themes
 const themes = [
-  { name: 'Modern Dark', backgroundColor: '#0f172a', textColor: '#ffffff' },
-  { name: 'Elegant Blue', backgroundColor: '#1e3a8a', textColor: '#ffffff' },
-  { name: 'Fresh Green', backgroundColor: '#064e3b', textColor: '#ffffff' },
-  { name: 'Warm Orange', backgroundColor: '#7c2d12', textColor: '#ffffff' },
-  { name: 'Light Professional', backgroundColor: '#f8fafc', textColor: '#0f172a' },
-  { name: 'Soft Pink', backgroundColor: '#fce7f3', textColor: '#831843' },
+  { name: 'Royal Black', background_color: '#000000', text_color: '#D4AF37' },
+  { name: 'Midnight Blue', background_color: '#0B132B', text_color: '#6FFFE9' },
+  { name: 'Deep Burgundy', background_color: '#4A0E0E', text_color: '#F5E6E8' },
+  { name: 'Forest Green', background_color: '#1A3E28', text_color: '#D4F1C2' },
+  { name: 'Ocean Teal', background_color: '#0F4C75', text_color: '#BBE1FA' },
+  { name: 'Lavender Dream', background_color: '#4B3D60', text_color: '#F3E8FF' },
+  { name: 'Charcoal Gold', background_color: '#2C3639', text_color: '#DCD7C9' },
+  { name: 'Sapphire White', background_color: '#132743', text_color: '#E4E4E4' },
+  { name: 'Rose Gold', background_color: '#5A3D4A', text_color: '#FFD1DC' },
+  { name: 'Navy Silver', background_color: '#171F33', text_color: '#C0C0C0' },
+  { name: 'Ivory Black', background_color: '#F5F5F5', text_color: '#1A1A1A' },
+  { name: 'Classic Cream', background_color: '#F8F5E4', text_color: '#4A4A4A' },
+  { name: 'Modern Gray', background_color: '#2A2A2A', text_color: '#E8E8E8' },
+  { name: 'Warm Tan', background_color: '#5C4D3E', text_color: '#FFF3E0' },
+  { name: 'Purple Haze', background_color: '#3F2345', text_color: '#E8D5F3' },
+  { name: 'Coral Deep', background_color: '#5C1A1A', text_color: '#FFE4E1' },
 ];
 
 const RHFTextField = ({
-  name, label, disabled, type, select, required, options, multiline, minRows,
+  name, label, disabled, type, select, required, options, multiline, minRows, maxRows, maxLength,
 }: {
   name: keyof ProfileFormValues;
   label: string;
@@ -63,8 +84,12 @@ const RHFTextField = ({
   options?: Readonly<Option[]>;
   multiline?: boolean;
   minRows?: number;
+  maxRows?: number;
+  maxLength?: number;
 }) => {
-  const { control, formState: { errors } } = useFormContext<ProfileFormValues>();
+  const { control, formState: { errors }, watch } = useFormContext<ProfileFormValues>();
+  const value = watch(name);
+  
   return (
     <Controller
       name={name}
@@ -81,6 +106,17 @@ const RHFTextField = ({
           required={required}
           multiline={multiline}
           minRows={minRows}
+          maxRows={maxRows}
+          inputProps={maxLength ? { maxLength } : undefined}
+          InputProps={maxLength && multiline ? {
+            endAdornment: (
+              <InputAdornment position="end" sx={{ alignSelf: 'flex-end', mb: 1 }}>
+                <Typography variant="caption" color="textSecondary">
+                  {value?.length || 0}/{maxLength}
+                </Typography>
+              </InputAdornment>
+            ),
+          } : undefined}
           error={!!errors[name]}
           helperText={(errors[name]?.message as string) || ''}
         >
@@ -93,25 +129,33 @@ const RHFTextField = ({
   );
 };
 
-export default function ProfileForm({ mode, companyOptions, onImageUpload }: Props) {
+export default function ProfileForm({ mode, companyOptions, onImageUpload, onSaveTemplate, savedTemplates, onLoadTemplate, onDeleteTemplate }: Props) {
   const isView = mode === 'view';
   const isAdd = mode === 'add';
   const { watch, setValue } = useFormContext<ProfileFormValues>();
+  const [templateName, setTemplateName] = useState('');
 
-  const profileImage = watch('profileImage');
-  const coverImage = watch('coverImage');
-  const currentBgColor = watch('backgroundColor');
-  const currentTextColor = watch('textColor');
+  const profileImage = watch('profile_image');
+  const coverImage = watch('cover_image');
+  const currentBgColor = watch('background_color');
+  const currentTextColor = watch('text_color');
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'profileImage' | 'coverImage') => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'profile_image' | 'cover_image') => {
     if (e.target.files && e.target.files[0]) {
       await onImageUpload(e.target.files[0], field);
     }
   };
 
   const applyTheme = (theme: typeof themes[0]) => {
-    setValue('backgroundColor', theme.backgroundColor);
-    setValue('textColor', theme.textColor);
+    setValue('background_color', theme.background_color);
+    setValue('text_color', theme.text_color);
+  };
+
+  const handleSaveTemplate = () => {
+    if (templateName.trim() && onSaveTemplate) {
+      onSaveTemplate(templateName.trim());
+      setTemplateName('');
+    }
   };
 
   return (
@@ -122,41 +166,103 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload }: Pro
           Customization
         </Typography>
 
-        {/* Theme Picker */}
-        {!isView && (
+        {/* Saved Templates */}
+        {!isView && savedTemplates && savedTemplates.length > 0 && (
           <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>Quick Themes</Typography>
-            <Grid container spacing={1}>
-              {themes.map((theme, index) => (
-                <Grid item key={index}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>Your Saved Templates</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {savedTemplates.map((template, index) => (
+                <Box key={index} sx={{ display: 'flex', gap: 0.5 }}>
                   <Button
-                    variant={
-                      currentBgColor === theme.backgroundColor && currentTextColor === theme.textColor ? 'contained' : 'outlined'
-                    }
+                    variant="outlined"
                     size="small"
-                    onClick={() => applyTheme(theme)}
+                    onClick={() => onLoadTemplate?.(template)}
                     sx={{
-                      backgroundColor: currentBgColor === theme.backgroundColor && currentTextColor === theme.textColor ? theme.backgroundColor : 'transparent',
-                      borderColor: theme.backgroundColor,
-                      color: currentBgColor === theme.backgroundColor && currentTextColor === theme.textColor ? theme.textColor : theme.backgroundColor,
+                      backgroundColor: 'transparent',
+                      borderColor: template.background_color,
+                      color: template.background_color,
                       ':hover': {
-                        backgroundColor: theme.backgroundColor,
-                        color: theme.textColor,
+                        backgroundColor: template.background_color,
+                        color: template.text_color,
                       },
                     }}
                   >
-                    {theme.name}
+                    {template.name}
                   </Button>
-                </Grid>
+                  {onDeleteTemplate && (
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => onDeleteTemplate(index)}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
               ))}
-            </Grid>
+            </Box>
           </Box>
         )}
 
-        {/* Color Pickers */}
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
-          <RHFTextField name="backgroundColor" label="Background Color" disabled={isView} type="color" />
-          <RHFTextField name="textColor" label="Text Color" disabled={isView} type="color" />
+        {/* Theme Picker */}
+        {!isView && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>Luxury Quick Themes</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              {themes.map((theme, index) => (
+                <Button
+                  key={index}
+                  variant={
+                    currentBgColor === theme.background_color && currentTextColor === theme.text_color ? 'contained' : 'outlined'
+                  }
+                  size="small"
+                  onClick={() => applyTheme(theme)}
+                  sx={{
+                    backgroundColor: currentBgColor === theme.background_color && currentTextColor === theme.text_color ? theme.background_color : 'transparent',
+                    borderColor: theme.background_color,
+                    color: currentBgColor === theme.background_color && currentTextColor === theme.text_color ? theme.text_color : theme.background_color,
+                    ':hover': {
+                      backgroundColor: theme.background_color,
+                      color: theme.text_color,
+                    },
+                  }}
+                >
+                  {theme.name}
+                </Button>
+              ))}
+            </Box>
+          </Box>
+        )}
+
+        {/* Save Template */}
+        {!isView && onSaveTemplate && (
+          <Box sx={{ display: 'flex', gap: 1, mb: 3, alignItems: 'flex-end' }}>
+            <TextField
+              label="Save Template As"
+              size="small"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              sx={{ flex: 1 }}
+            />
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<SaveIcon />}
+              onClick={handleSaveTemplate}
+              disabled={!templateName.trim()}
+            >
+              Save
+            </Button>
+          </Box>
+        )}
+
+        {/* Full Custom Controls */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>Full Custom Theme</Typography>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <RHFTextField name="background_color" label="Background Color" disabled={isView} type="color" />
+            <RHFTextField name="text_color" label="Text Color" disabled={isView} type="color" />
+          </Box>
         </Box>
 
         {/* Images */}
@@ -181,7 +287,7 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload }: Pro
                   type="file"
                   hidden
                   accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'profileImage')}
+                  onChange={(e) => handleFileChange(e, 'profile_image')}
                 />
               </Button>
             )}
@@ -207,7 +313,7 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload }: Pro
                   type="file"
                   hidden
                   accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'coverImage')}
+                  onChange={(e) => handleFileChange(e, 'cover_image')}
                 />
               </Button>
             )}
@@ -226,11 +332,10 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload }: Pro
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
           <RHFTextField name="name" label="Name" required disabled={isView} />
           <RHFTextField name="title" label="Job Title" disabled={isView} />
-          <RHFTextField name="companyName" label="Company Name" disabled={isView} />
-          <RHFTextField name="slug" label="Custom Slug" disabled={isView} placeholder="your-custom-slug" />
+          <RHFTextField name="company_name" label="Company Name" disabled={isView} />
           {isAdd ? (
             <RHFTextField
-              name="customerId"
+              name="customer_id"
               label="Template"
               select
               options={companyOptions}
@@ -238,7 +343,7 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload }: Pro
               disabled={isView}
             />
           ) : (
-            <RHFTextField name="customerId" label="Template" disabled />
+            <RHFTextField name="customer_id" label="Template" disabled />
           )}
           <RHFTextField name="phone1" label="Phone 1" disabled={isView} />
           <RHFTextField name="phone2" label="Phone 2" disabled={isView} />
@@ -278,6 +383,8 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload }: Pro
           disabled={isView}
           multiline
           minRows={3}
+          maxRows={6}
+          maxLength={500}
         />
       </Box>
     </>

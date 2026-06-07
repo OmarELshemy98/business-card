@@ -10,7 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Helper function to get profile safely
 async function getProfile(id: string): Promise<Profile | null> {
-  // Try by id first
+  // Try by id
   try {
     const { data } = await supabase
       .from('business_cards')
@@ -18,18 +18,6 @@ async function getProfile(id: string): Promise<Profile | null> {
       .eq('id', id)
       .single();
     if (data) return data as Profile;
-  } catch (error) {
-    // Ignore error if no data found
-  }
-
-  // Try by slug
-  try {
-    const { data: slugData } = await supabase
-      .from('business_cards')
-      .select('*')
-      .eq('slug', id)
-      .single();
-    if (slugData) return slugData as Profile;
   } catch (error) {
     // Ignore error if no data found
   }
@@ -53,7 +41,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       siteName: 'Smart Business Cards',
       images: [
         {
-          url: profile?.profileImage || profile?.coverImage || 'https://coresg-normal.trae.ai/api/ide/v1/text-to-image?prompt=professional%20business%20card%20icon&image_size=square',
+          url: profile?.profile_image || profile?.cover_image || 'https://coresg-normal.trae.ai/api/ide/v1/text-to-image?prompt=professional%20business%20card%20icon&image_size=square',
           width: 800,
           height: 600,
         },
