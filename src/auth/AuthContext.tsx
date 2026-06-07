@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.tsx
 'use client';
 
 import React, { 
@@ -8,21 +7,8 @@ import React, {
     useState, 
     useCallback 
 } from 'react';
-import {
-  onAuthStateChanged,
-  User as FirebaseUser,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-} from 'firebase/auth';
-import { auth } from '../../firebaseConfig'; // Adjust path if needed
-
-// Firestore imports for user creation
-import { db } from '../../firebaseConfig';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-
-// ============================================================================
-// 1. Types
-// ============================================================================
+import { supabase } from '../../supabaseClient';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 type StoredUser = {
   uid: string;
@@ -33,16 +19,12 @@ type StoredUser = {
 };
 
 export interface AuthContextModel {
-  user: FirebaseUser | null;    // Live, non-serializable Firebase user
-  profile: StoredUser | null;   // Serializable snapshot for storage/initial load
+  user: SupabaseUser | null;
+  profile: StoredUser | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
-
-// ============================================================================
-// 2. Storage Manager
-// ============================================================================
 
 const STORED_USER_KEY = 'auth:user_profile';
 
@@ -74,56 +56,50 @@ const authStorage = {
   },
 };
 
-// ============================================================================
-// 3. Context Definition
-// ============================================================================
-
 export const AuthContext = createContext<AuthContextModel | undefined>(undefined);
 
-// ============================================================================
-// 4. Provider Component & Logic Hook
-// ============================================================================
-
-/**
- * The core logic for authentication state management.
- */
 function useProvideAuth(): AuthContextModel {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<StoredUser | null>(() => authStorage.getUser());
   const [isLoading, setLoading] = useState<boolean>(true);
 
-  // Subscribe to Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      if (session?.user) {
         const userSnapshot: StoredUser = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
-          emailVerified: firebaseUser.emailVerified,
+          uid: session.user.id,
+          email: session.user.email ?? null, // Fix type: use null instead of undefined
+          displayName: session.user.user_metadata?.full_name || '',
+          photoURL: session.user.user_metadata?.avatar_url || '',
+          emailVerified: session.user.email_confirmed_at != null,
         };
         setProfile(userSnapshot);
         authStorage.saveUser(userSnapshot);
+        await ensureUserInDB(session.user.id, session.user.email);
+      } else {
+        setProfile(null);
+        authStorage.removeUser();
+      }
+      setLoading(false);
+    };
 
-        // Create user doc in Firestore if it doesn't exist (best effort, idempotent)
-        try {
-          // بعد ما تنشئ اليوزر وتاخد uid + email + name
-          await setDoc(
-            doc(db, 'users', firebaseUser.uid),
-            {
-              email: firebaseUser.email,
-              name: firebaseUser.displayName || '',
-              role: 'user', // أو 'admin'
-              createdAt: serverTimestamp(),
-            },
-            { merge: true } // merge to avoid overwriting if exists
-          );
-        } catch {
-          // Ignore Firestore errors here (user may already exist, etc.)
-          // Optionally log: console.warn('Failed to create user doc in Firestore', err);
-        }
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        const userSnapshot: StoredUser = {
+          uid: session.user.id,
+          email: session.user.email ?? null, // Fix type: use null instead of undefined
+          displayName: session.user.user_metadata?.full_name || '',
+          photoURL: session.user.user_metadata?.avatar_url || '',
+          emailVerified: session.user.email_confirmed_at != null,
+        };
+        setProfile(userSnapshot);
+        authStorage.saveUser(userSnapshot);
+        await ensureUserInDB(session.user.id, session.user.email);
       } else {
         setProfile(null);
         authStorage.removeUser();
@@ -131,20 +107,43 @@ function useProvideAuth(): AuthContextModel {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
 
+  const ensureUserInDB = async (uid: string, email: string | undefined) => {
+    try {
+      // Use .maybeSingle() instead of .single() to avoid errors
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', uid)
+        .maybeSingle();
+
+      if (!existingUser) {
+        await supabase
+          .from('users')
+          .insert({
+            id: uid,
+            email: email,
+            name: '',
+            role: 'user',
+            created_at: new Date().toISOString(),
+          });
+      }
+    } catch (error) {
+      console.warn('Failed to ensure user in DB', error);
+    }
+  };
+
   const signIn = useCallback(async (email: string, password: string) => {
-    // onAuthStateChanged will handle state and storage updates
-    await signInWithEmailAndPassword(auth, email, password);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
   }, []);
 
   const signOut = useCallback(async () => {
-    // onAuthStateChanged will handle state and storage cleanup
-    await firebaseSignOut(auth);
+    await supabase.auth.signOut();
   }, []);
   
-  // Memoize the context value to prevent unnecessary re-renders of consumers
   return useMemo(() => ({
     user,
     profile,
@@ -154,10 +153,6 @@ function useProvideAuth(): AuthContextModel {
   }), [user, profile, isLoading, signIn, signOut]);
 }
 
-/**
- * Provider component that wraps your app and makes auth object available to any
- * child component that calls useAuth().
- */
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const authData = useProvideAuth();
   return (

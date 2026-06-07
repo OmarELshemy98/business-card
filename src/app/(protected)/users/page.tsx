@@ -37,17 +37,14 @@ export default function UsersPage() {
     { field: 'name', headerName: 'Name', flex: 1, minWidth: 140 },
     { field: 'role', headerName: 'Role', flex: 0.6, minWidth: 100 },
     {
-      field: 'createdAt',
+      field: 'created_at',
       headerName: 'Created',
       flex: 0.8,
       minWidth: 130,
       valueGetter: (params) => {
-        const v = params.row.createdAt;
+        const v = params.row.created_at;
         if (!v) return '';
-        const date =
-          v?.seconds != null ? new Date(v.seconds * 1000) :
-          typeof v === 'number' ? new Date(v) :
-          new Date();
+        const date = new Date(v);
         return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
       },
     },

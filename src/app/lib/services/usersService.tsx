@@ -1,17 +1,24 @@
-import { db } from '../../../../firebaseConfig';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { supabase } from '../../../../supabaseClient';
 
 export type AppUser = {
-  id: string;           // uid
+  id: string;
   email: string;
   name?: string;
   role?: 'admin' | 'user';
-  createdAt?: any;      // Timestamp | number
+  created_at?: any;
   disabled?: boolean;
 };
 
 export async function fetchUsersFromDB(): Promise<AppUser[]> {
-  const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...(d.data() as Omit<AppUser, 'id'>) }));
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
+
+  return data as AppUser[];
 }

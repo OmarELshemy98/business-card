@@ -1,39 +1,114 @@
-// src/app/lib/services/profilesService.tsx
-import { db } from '../../../../firebaseConfig';
-import {
-  collection,
-  getDocs,
-  deleteDoc,
-  doc,
-  query,
-  where,
-} from 'firebase/firestore';
+import { supabase } from '../../../../supabaseClient';
 import type { Profile } from '../../types/profile';
+import { v4 as uuidv4 } from 'uuid';
 
-// ✅ اسم الكولكشن الجديد في مكان واحد
-const COLLECTION = 'business_cards' as const;
+const TABLE = 'business_cards' as const;
 
-/**
- * Fetch all profiles that belong to a specific user (by ownerId).
- * Assumes every profile document contains: ownerId = uid
- */
 export async function fetchProfilesForUser(uid: string): Promise<Profile[]> {
   if (!uid) return [];
 
-  const colRef = collection(db, COLLECTION);
-  const q = query(colRef, where('ownerId', '==', uid));
-  const qs = await getDocs(q);
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('ownerId', uid);
 
-  return qs.docs.map(d => ({
+  if (error) {
+    console.error('Error fetching profiles:', error);
+    return [];
+  }
+
+  return data.map(d => ({
     id: d.id,
-    ...(d.data() as Omit<Profile, 'id'>),
+    ...(d as Omit<Profile, 'id'>),
   }));
 }
 
-/**
- * Delete a profile document by id.
- * Security Rules must ensure only the owner can delete.
- */
+export async function fetchAllProfiles(): Promise<Profile[]> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching all profiles:', error);
+    return [];
+  }
+
+  return data.map(d => ({
+    id: d.id,
+    ...(d as Omit<Profile, 'id'>),
+  }));
+}
+
+export async function createProfile(profile: Omit<Profile, 'id' | 'createdAt'>): Promise<Profile> {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .insert({ ...profile, created_at: now })
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error creating profile:', error);
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error('Failed to create profile');
+  }
+
+  return data as Profile;
+}
+
+export async function updateProfile(id: string, profile: Partial<Profile>): Promise<Profile> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update(profile)
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error updating profile:', error);
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error('Failed to update profile');
+  }
+
+  return data as Profile;
+}
+
 export async function deleteProfileFromDB(profileId: string): Promise<void> {
-  await deleteDoc(doc(db, COLLECTION, profileId));
+  const { error } = await supabase
+    .from(TABLE)
+    .delete()
+    .eq('id', profileId);
+
+  if (error) {
+    console.error('Error deleting profile:', error);
+    throw error;
+  }
+}
+
+export async function uploadImage(file: File, bucket: string = 'business-cards'): Promise<string> {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${uuidv4()}.${fileExt}`;
+  const filePath = `${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(bucket)
+    .upload(filePath, file);
+
+  if (uploadError) {
+    console.error('Error uploading image:', uploadError);
+    throw uploadError;
+  }
+
+  const { data } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
 }

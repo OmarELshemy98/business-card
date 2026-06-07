@@ -4,16 +4,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { GridSortModel, GridColDef, GridRowParams } from '@mui/x-data-grid';
 import { GridActionsCellItem } from '@mui/x-data-grid';
+import { useRouter } from 'next/navigation';
 
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 import type { Profile } from '../types/profile';
 import { useAuth } from './useAuth';
 import { fetchProfilesForUser, deleteProfileFromDB } from '../lib/services/profilesService';
 
 export function useProfiles() {
+  const router = useRouter();
+  
   // --- auth ---
   const { user } = useAuth();
 
@@ -45,7 +49,7 @@ export function useProfiles() {
 
     setLoading(true);
     try {
-      const data = await fetchProfilesForUser(user.uid);
+      const data = await fetchProfilesForUser(user.id);
       setProfiles(data);
     } catch (error) {
       console.error('Failed to fetch profiles:', error);
@@ -57,7 +61,7 @@ export function useProfiles() {
   useEffect(() => {
     fetchProfiles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]); // كل ما الـ uid يتغير (login/logout) أعد الجلب
+  }, [user?.id]); // كل ما الـ uid يتغير (login/logout) أعد الجلب
 
   // --- delete flow ---
   const handleDeleteClick = (id: string) => {
@@ -122,6 +126,11 @@ export function useProfiles() {
     });
   }, [profiles, searchTerm]);
 
+  // --- view public card ---
+  const handleViewPublicCard = (id: string) => {
+    window.open(`/card/${id}`, '_blank');
+  };
+
   // --- columns (responsive friendly) ---
   const columns: GridColDef[] = useMemo(
     () => [
@@ -165,12 +174,18 @@ export function useProfiles() {
         field: 'actions',
         headerName: 'Actions',
         type: 'actions',
-        minWidth: 100,
-        flex: 0.8,
+        minWidth: 140,
+        flex: 1,
         align: 'center',
         headerAlign: 'center',
         hideable: false,
         getActions: (params: GridRowParams) => [
+          <GridActionsCellItem
+            key="public"
+            icon={<OpenInNewIcon fontSize="small" />}
+            label="View Public Card"
+            onClick={() => handleViewPublicCard((params.row as Profile).id)}
+          />,
           <GridActionsCellItem
             key="view"
             icon={<VisibilityIcon fontSize="small" />}

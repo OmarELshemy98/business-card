@@ -1,4 +1,3 @@
-// src/app/login/page.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -11,15 +10,9 @@ import {
   Paper,
   CircularProgress
 } from '@mui/material';
-import { sendPasswordResetEmail, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '../../../firebaseConfig';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
-import { FirebaseError } from 'firebase/app';
-
-// Firestore لإنشاء مستندات users / profiles
-import { db } from '../../../firebaseConfig';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '../../../supabaseClient';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -32,54 +25,19 @@ export default function LoginPage() {
   const router = useRouter();
   const { signIn } = useAuth();
 
-  // ===== Register helper =====
   const signUp = async (email: string, password: string, displayName: string) => {
-    // 1) إنشاء مستخدم Auth
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    const user = cred.user;
-
-    // 2) تحديث الاسم على ملف الـ Auth (اختياري لكن مفيد)
-    if (displayName) {
-      await updateProfile(user, { displayName });
-    }
-
-    // 3) users/{uid}
-    await setDoc(
-      doc(db, 'users', user.uid),
-      {
-        email: user.email,
-        name: displayName || '',
-        role: 'user',
-        createdAt: serverTimestamp(),
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: displayName,
+        },
       },
-      { merge: true }
-    );
+    });
 
-    // 4) profiles/{uid} بنفس الـ UID (كارت ابتدائي بسيط، تقدر تعدل الـ fields حسب احتياجك)
-    await setDoc(
-      doc(db, 'profiles', user.uid),
-      {
-        id: user.uid,
-        ownerId: user.uid,
-        authUid: user.uid,
-        name: displayName || '',
-        email: user.email || '',
-        customerId: 'customTemplate',   // اختياري: قيمة مبدئية للقالب
-        title: '',
-        website: '',
-        linkedin: '',
-        twitter: '',
-        facebook: '',
-        instagram: '',
-        youtube: '',
-        tiktok: '',
-        description: '',
-        createdAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    return user;
+    if (error) throw error;
+    return data.user;
   };
 
   const handleAuthAction = async (e: React.FormEvent) => {
@@ -93,45 +51,14 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       if (isLoginMode) {
-        // Login
         await signIn(email, password);
       } else {
-        // Register
         await signUp(email, password, name);
       }
       router.push('/dashboard');
-    } catch (err) {
-      if (err instanceof FirebaseError) {
-        switch (err.code) {
-          case 'auth/invalid-credential':
-            toast.error('Invalid email address or incorrect password.');
-            break;
-          case 'auth/invalid-email':
-            toast.error('Invalid email address.');
-            break;
-          case 'auth/user-not-found':
-            toast.error('No account found with this email.');
-            break;
-          case 'auth/wrong-password':
-            toast.error('Incorrect password.');
-            break;
-          case 'auth/too-many-requests':
-            toast.error('Too many failed attempts. Please try again later.');
-            break;
-          case 'auth/email-already-in-use':
-            toast.error('This email is already in use.');
-            break;
-          case 'auth/weak-password':
-            toast.error('Password should be at least 6 characters.');
-            break;
-          default:
-            toast.error('Something went wrong. Please try again.');
-        }
-        console.log(err);
-      } else {
-        toast.error('Unexpected error occurred.');
-        console.error(err);
-      }
+    } catch (err: any) {
+      toast.error(err.message || 'Something went wrong. Please try again.');
+      console.error(err);
     } finally {
       setIsSubmitting(false);
     }
@@ -143,7 +70,9 @@ export default function LoginPage() {
       return;
     }
     try {
-      await sendPasswordResetEmail(auth, email);
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login`,
+      });
       toast.success('A password reset link has been sent to your email.');
     } catch {
       toast.error('Failed to send password reset email. Please check the email and try again.');

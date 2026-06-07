@@ -1,8 +1,14 @@
 'use client';
-import { getAuth, createUserWithEmailAndPassword, UserCredential } from 'firebase/auth';
+import { supabase } from '../../supabaseClient';
 
 export async function CreateUser(email: string, pass: string) {
-  const auth = getAuth();
-  const cred: UserCredential = await createUserWithEmailAndPassword(auth, email, pass);
-  return { cred, uid: cred.user.uid };
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: pass,
+  });
+  
+  if (error) throw error;
+  if (!data.user) throw new Error('No user returned');
+  
+  return { cred: data, uid: data.user.id };
 }
