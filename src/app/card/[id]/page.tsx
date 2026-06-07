@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
       siteName: 'Smart Business Cards',
       images: [
         {
-          url: profile?.profile_image || profile?.cover_image || 'https://coresg-normal.trae.ai/api/ide/v1/text-to-image?prompt=professional%20business%20card%20icon&image_size=square',
+          url: profile?.profileImage || profile?.coverImage || 'https://coresg-normal.trae.ai/api/ide/v1/text-to-image?prompt=professional%20business%20card%20icon&image_size=square',
           width: 800,
           height: 600,
         },

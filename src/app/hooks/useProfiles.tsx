@@ -33,7 +33,7 @@ export function useProfiles() {
   const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
 
   // --- default sort model ---
-  const sortModel: GridSortModel = useMemo(() => [{ field: 'customer_id', sort: 'asc' }], []);
+  const sortModel: GridSortModel = useMemo(() => [{ field: 'customerId', sort: 'asc' }], []);
 
   // --- integration calls ---
   const fetchProfiles = async () => {
@@ -117,8 +117,8 @@ export function useProfiles() {
       return (
         (p.name || '').toLowerCase().includes(q) ||
         (p.title || '').toLowerCase().includes(q) ||
-        (p.customer_id || '').toLowerCase().includes(q) ||
-        (p.company_name || '').toLowerCase().includes(q)
+        (p.customerId || '').toLowerCase().includes(q) ||
+        (p.companyName || '').toLowerCase().includes(q)
       );
     });
   }, [profiles, searchTerm]);
@@ -150,7 +150,7 @@ export function useProfiles() {
         hideable: true,
       },
       {
-        field: 'customer_id',
+        field: 'customerId',
         headerName: 'Template',
         minWidth: 120,
         flex: 1,

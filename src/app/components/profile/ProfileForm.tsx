@@ -15,8 +15,8 @@ export type ProfileFormValues = {
   id?: string;
   name: string;
   title?: string;
-  customer_id: string;
-  company_name?: string;
+  customerId: string;
+  companyName?: string;
   phone1?: string;
   phone2?: string;
   email?: string;
@@ -28,24 +28,24 @@ export type ProfileFormValues = {
   youtube?: string;
   tiktok?: string;
   description?: string;
-  profile_image?: string;
-  cover_image?: string;
-  background_color?: string;
-  text_color?: string;
+  profileImage?: string;
+  coverImage?: string;
+  backgroundColor?: string;
+  textColor?: string;
 };
 
 type Option = { value: string; label: string };
 
 type SavedTemplate = {
   name: string;
-  background_color: string;
-  text_color: string;
+  backgroundColor: string;
+  textColor: string;
 };
 
 type Props = {
   mode: Mode;
   companyOptions: Readonly<Option[]>;
-  onImageUpload: (file: File, field: 'profile_image' | 'cover_image') => Promise<void>;
+  onImageUpload: (file: File, field: 'profileImage' | 'coverImage') => Promise<void>;
   onSaveTemplate?: (name: string) => void;
   savedTemplates?: SavedTemplate[];
   onLoadTemplate?: (template: SavedTemplate) => void;
@@ -54,22 +54,22 @@ type Props = {
 
 // Luxury Themes
 const themes = [
-  { name: 'Royal Black', background_color: '#000000', text_color: '#D4AF37' },
-  { name: 'Midnight Blue', background_color: '#0B132B', text_color: '#6FFFE9' },
-  { name: 'Deep Burgundy', background_color: '#4A0E0E', text_color: '#F5E6E8' },
-  { name: 'Forest Green', background_color: '#1A3E28', text_color: '#D4F1C2' },
-  { name: 'Ocean Teal', background_color: '#0F4C75', text_color: '#BBE1FA' },
-  { name: 'Lavender Dream', background_color: '#4B3D60', text_color: '#F3E8FF' },
-  { name: 'Charcoal Gold', background_color: '#2C3639', text_color: '#DCD7C9' },
-  { name: 'Sapphire White', background_color: '#132743', text_color: '#E4E4E4' },
-  { name: 'Rose Gold', background_color: '#5A3D4A', text_color: '#FFD1DC' },
-  { name: 'Navy Silver', background_color: '#171F33', text_color: '#C0C0C0' },
-  { name: 'Ivory Black', background_color: '#F5F5F5', text_color: '#1A1A1A' },
-  { name: 'Classic Cream', background_color: '#F8F5E4', text_color: '#4A4A4A' },
-  { name: 'Modern Gray', background_color: '#2A2A2A', text_color: '#E8E8E8' },
-  { name: 'Warm Tan', background_color: '#5C4D3E', text_color: '#FFF3E0' },
-  { name: 'Purple Haze', background_color: '#3F2345', text_color: '#E8D5F3' },
-  { name: 'Coral Deep', background_color: '#5C1A1A', text_color: '#FFE4E1' },
+  { name: 'Royal Black', backgroundColor: '#000000', textColor: '#D4AF37' },
+  { name: 'Midnight Blue', backgroundColor: '#0B132B', textColor: '#6FFFE9' },
+  { name: 'Deep Burgundy', backgroundColor: '#4A0E0E', textColor: '#F5E6E8' },
+  { name: 'Forest Green', backgroundColor: '#1A3E28', textColor: '#D4F1C2' },
+  { name: 'Ocean Teal', backgroundColor: '#0F4C75', textColor: '#BBE1FA' },
+  { name: 'Lavender Dream', backgroundColor: '#4B3D60', textColor: '#F3E8FF' },
+  { name: 'Charcoal Gold', backgroundColor: '#2C3639', textColor: '#DCD7C9' },
+  { name: 'Sapphire White', backgroundColor: '#132743', textColor: '#E4E4E4' },
+  { name: 'Rose Gold', backgroundColor: '#5A3D4A', textColor: '#FFD1DC' },
+  { name: 'Navy Silver', backgroundColor: '#171F33', textColor: '#C0C0C0' },
+  { name: 'Ivory Black', backgroundColor: '#F5F5F5', textColor: '#1A1A1A' },
+  { name: 'Classic Cream', backgroundColor: '#F8F5E4', textColor: '#4A4A4A' },
+  { name: 'Modern Gray', backgroundColor: '#2A2A2A', textColor: '#E8E8E8' },
+  { name: 'Warm Tan', backgroundColor: '#5C4D3E', textColor: '#FFF3E0' },
+  { name: 'Purple Haze', backgroundColor: '#3F2345', textColor: '#E8D5F3' },
+  { name: 'Coral Deep', backgroundColor: '#5C1A1A', textColor: '#FFE4E1' },
 ];
 
 const RHFTextField = ({
@@ -135,20 +135,20 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload, onSav
   const { watch, setValue } = useFormContext<ProfileFormValues>();
   const [templateName, setTemplateName] = useState('');
 
-  const profileImage = watch('profile_image');
-  const coverImage = watch('cover_image');
-  const currentBgColor = watch('background_color');
-  const currentTextColor = watch('text_color');
+  const profileImage = watch('profileImage');
+  const coverImage = watch('coverImage');
+  const currentBgColor = watch('backgroundColor');
+  const currentTextColor = watch('textColor');
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'profile_image' | 'cover_image') => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'profileImage' | 'coverImage') => {
     if (e.target.files && e.target.files[0]) {
       await onImageUpload(e.target.files[0], field);
     }
   };
 
   const applyTheme = (theme: typeof themes[0]) => {
-    setValue('background_color', theme.background_color);
-    setValue('text_color', theme.text_color);
+    setValue('backgroundColor', theme.backgroundColor);
+    setValue('textColor', theme.textColor);
   };
 
   const handleSaveTemplate = () => {
@@ -179,11 +179,11 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload, onSav
                     onClick={() => onLoadTemplate?.(template)}
                     sx={{
                       backgroundColor: 'transparent',
-                      borderColor: template.background_color,
-                      color: template.background_color,
+                      borderColor: template.backgroundColor,
+                      color: template.backgroundColor,
                       ':hover': {
-                        backgroundColor: template.background_color,
-                        color: template.text_color,
+                        backgroundColor: template.backgroundColor,
+                        color: template.textColor,
                       },
                     }}
                   >
@@ -213,17 +213,17 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload, onSav
                 <Button
                   key={index}
                   variant={
-                    currentBgColor === theme.background_color && currentTextColor === theme.text_color ? 'contained' : 'outlined'
+                    currentBgColor === theme.backgroundColor && currentTextColor === theme.textColor ? 'contained' : 'outlined'
                   }
                   size="small"
                   onClick={() => applyTheme(theme)}
                   sx={{
-                    backgroundColor: currentBgColor === theme.background_color && currentTextColor === theme.text_color ? theme.background_color : 'transparent',
-                    borderColor: theme.background_color,
-                    color: currentBgColor === theme.background_color && currentTextColor === theme.text_color ? theme.text_color : theme.background_color,
+                    backgroundColor: currentBgColor === theme.backgroundColor && currentTextColor === theme.textColor ? theme.backgroundColor : 'transparent',
+                    borderColor: theme.backgroundColor,
+                    color: currentBgColor === theme.backgroundColor && currentTextColor === theme.textColor ? theme.textColor : theme.backgroundColor,
                     ':hover': {
-                      backgroundColor: theme.background_color,
-                      color: theme.text_color,
+                      backgroundColor: theme.backgroundColor,
+                      color: theme.textColor,
                     },
                   }}
                 >
@@ -260,8 +260,8 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload, onSav
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>Full Custom Theme</Typography>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <RHFTextField name="background_color" label="Background Color" disabled={isView} type="color" />
-            <RHFTextField name="text_color" label="Text Color" disabled={isView} type="color" />
+            <RHFTextField name="backgroundColor" label="Background Color" disabled={isView} type="color" />
+            <RHFTextField name="textColor" label="Text Color" disabled={isView} type="color" />
           </Box>
         </Box>
 
@@ -287,7 +287,7 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload, onSav
                   type="file"
                   hidden
                   accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'profile_image')}
+                  onChange={(e) => handleFileChange(e, 'profileImage')}
                 />
               </Button>
             )}
@@ -313,7 +313,7 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload, onSav
                   type="file"
                   hidden
                   accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'cover_image')}
+                  onChange={(e) => handleFileChange(e, 'coverImage')}
                 />
               </Button>
             )}
@@ -332,10 +332,10 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload, onSav
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
           <RHFTextField name="name" label="Name" required disabled={isView} />
           <RHFTextField name="title" label="Job Title" disabled={isView} />
-          <RHFTextField name="company_name" label="Company Name" disabled={isView} />
+          <RHFTextField name="companyName" label="Company Name" disabled={isView} />
           {isAdd ? (
             <RHFTextField
-              name="customer_id"
+              name="customerId"
               label="Template"
               select
               options={companyOptions}
@@ -343,7 +343,7 @@ export default function ProfileForm({ mode, companyOptions, onImageUpload, onSav
               disabled={isView}
             />
           ) : (
-            <RHFTextField name="customer_id" label="Template" disabled />
+            <RHFTextField name="customerId" label="Template" disabled />
           )}
           <RHFTextField name="phone1" label="Phone 1" disabled={isView} />
           <RHFTextField name="phone2" label="Phone 2" disabled={isView} />

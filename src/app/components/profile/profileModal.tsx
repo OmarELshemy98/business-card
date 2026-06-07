@@ -18,8 +18,8 @@ import { useAuth } from '../../hooks/useAuth';
 
 type SavedTemplate = {
   name: string;
-  background_color: string;
-  text_color: string;
+  backgroundColor: string;
+  textColor: string;
 };
 
 const baseOptions = [
@@ -70,10 +70,10 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       id: z.string().optional(),
       name: z.string().min(1, 'Name is required'),
       title: z.string().optional().or(z.literal('')),
-      company_name: z.string().optional().or(z.literal('')),
+      companyName: z.string().optional().or(z.literal('')),
       phone1: z.string().optional().or(z.literal('')),
       phone2: z.string().optional().or(z.literal('')),
-      customer_id: z.string().min(1, 'Template is required'),
+      customerId: z.string().min(1, 'Template is required'),
       email: z.string().email('Invalid email').optional().or(z.literal('')),
       website: z.string().url('Invalid URL').optional().or(z.literal('')),
       linkedin: z.string().url('Invalid URL').optional().or(z.literal('')),
@@ -83,10 +83,10 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       youtube: z.string().url('Invalid URL').optional().or(z.literal('')),
       tiktok: z.string().url('Invalid URL').optional().or(z.literal('')),
       description: z.string().max(500, 'Description too long').optional().or(z.literal('')),
-      profile_image: z.string().optional().or(z.literal('')),
-      cover_image: z.string().optional().or(z.literal('')),
-      background_color: z.string().optional().or(z.literal('')),
-      text_color: z.string().optional().or(z.literal('')),
+      profileImage: z.string().optional().or(z.literal('')),
+      coverImage: z.string().optional().or(z.literal('')),
+      backgroundColor: z.string().optional().or(z.literal('')),
+      textColor: z.string().optional().or(z.literal('')),
     });
   }, []);
 
@@ -97,10 +97,10 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       id: (profile as any)?.id ?? '',
       name: profile?.name ?? '',
       title: profile?.title ?? '',
-      company_name: profile?.company_name ?? '',
+      companyName: profile?.companyName ?? '',
       phone1: profile?.phone1 ?? '',
       phone2: profile?.phone2 ?? '',
-      customer_id: profile?.customer_id ?? 'customTemplate',
+      customerId: profile?.customerId ?? 'customTemplate',
       email: profile?.email ?? '',
       website: profile?.website ?? '',
       linkedin: profile?.linkedin ?? '',
@@ -110,10 +110,10 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       youtube: profile?.youtube ?? '',
       tiktok: profile?.tiktok ?? '',
       description: profile?.description ?? '',
-      profile_image: profile?.profile_image ?? '',
-      cover_image: profile?.cover_image ?? '',
-      background_color: profile?.background_color ?? '#0f172a',
-      text_color: profile?.text_color ?? '#ffffff',
+      profileImage: profile?.profileImage ?? '',
+      coverImage: profile?.coverImage ?? '',
+      backgroundColor: profile?.backgroundColor ?? '#0f172a',
+      textColor: profile?.textColor ?? '#ffffff',
     },
   });
 
@@ -122,10 +122,10 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       id: (profile as any)?.id ?? '',
       name: profile?.name ?? '',
       title: profile?.title ?? '',
-      company_name: profile?.company_name ?? '',
+      companyName: profile?.companyName ?? '',
       phone1: profile?.phone1 ?? '',
       phone2: profile?.phone2 ?? '',
-      customer_id: profile?.customer_id ?? 'customTemplate',
+      customerId: profile?.customerId ?? 'customTemplate',
       email: profile?.email ?? '',
       website: profile?.website ?? '',
       linkedin: profile?.linkedin ?? '',
@@ -135,14 +135,14 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
       youtube: profile?.youtube ?? '',
       tiktok: profile?.tiktok ?? '',
       description: profile?.description ?? '',
-      profile_image: profile?.profile_image ?? '',
-      cover_image: profile?.cover_image ?? '',
-      background_color: profile?.background_color ?? '#0f172a',
-      text_color: profile?.text_color ?? '#ffffff',
+      profileImage: profile?.profileImage ?? '',
+      coverImage: profile?.coverImage ?? '',
+      backgroundColor: profile?.backgroundColor ?? '#0f172a',
+      textColor: profile?.textColor ?? '#ffffff',
     });
   }, [profile, methods]);
 
-  const handleImageUpload = async (file: File, field: 'profile_image' | 'cover_image') => {
+  const handleImageUpload = async (file: File, field: 'profileImage' | 'coverImage') => {
     try {
       const url = await uploadImage(file);
       methods.setValue(field, url);
@@ -154,13 +154,13 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
   };
 
   const handleSaveTemplate = (name: string) => {
-    const bgColor = methods.watch('background_color') || '#0f172a';
-    const txtColor = methods.watch('text_color') || '#ffffff';
+    const bgColor = methods.watch('backgroundColor') || '#0f172a';
+    const txtColor = methods.watch('textColor') || '#ffffff';
     
     const newTemplate: SavedTemplate = {
       name,
-      background_color: bgColor,
-      text_color: txtColor,
+      backgroundColor: bgColor,
+      textColor: txtColor,
     };
     
     const updatedTemplates = [...savedTemplates, newTemplate];
@@ -174,9 +174,9 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
   };
 
   const handleLoadTemplate = (template: SavedTemplate) => {
-    methods.setValue('background_color', template.background_color);
-    methods.setValue('text_color', template.text_color);
-    methods.setValue('customer_id', `template_${template.name}`);
+    methods.setValue('backgroundColor', template.backgroundColor);
+    methods.setValue('textColor', template.textColor);
+    methods.setValue('customerId', `template_${template.name}`);
   };
 
   const handleDeleteTemplate = (index: number) => {
@@ -196,7 +196,7 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
         if (!user?.id) throw new Error('User not logged in');
         await createProfile({
           ...values,
-          owner_id: user.id,
+          ownerId: user.id,
         });
         showSnack('Profile added successfully!', 'success');
       } else if (isEdit) {
@@ -224,8 +224,8 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
 
   // Live preview values
   const previewData = methods.watch();
-  const bgColor = previewData.background_color || '#0f172a';
-  const textColor = previewData.text_color || '#ffffff';
+  const bgColor = previewData.backgroundColor || '#0f172a';
+  const textColor = previewData.textColor || '#ffffff';
 
   return (
     <Dialog
@@ -282,16 +282,16 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
                 color: textColor,
               }}
             >
-              {previewData.cover_image && (
+              {previewData.coverImage && (
                 <Box sx={{ width: '100%', maxWidth: 300, height: 100, borderRadius: 1, mb: -4, overflow: 'hidden' }}>
-                  <img src={previewData.cover_image} alt="Preview Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={previewData.coverImage} alt="Preview Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </Box>
               )}
               
-              <Box sx={{ textAlign: 'center', mt: previewData.cover_image ? 2 : 0 }}>
-                {previewData.profile_image ? (
+              <Box sx={{ textAlign: 'center', mt: previewData.coverImage ? 2 : 0 }}>
+                {previewData.profileImage ? (
                   <Avatar
-                    src={previewData.profile_image}
+                    src={previewData.profileImage}
                     sx={{ width: 80, height: 80, mx: 'auto', mb: 1, border: `4px solid ${bgColor}` }}
                   />
                 ) : (
@@ -309,7 +309,7 @@ export default function ProfileModal({ open, handleClose, profile, mode, onDataC
                   {previewData.title || 'Job Title'}
                 </Typography>
                 <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                  {previewData.company_name || 'Company Name'}
+                  {previewData.companyName || 'Company Name'}
                 </Typography>
 
                 {previewData.description && (
